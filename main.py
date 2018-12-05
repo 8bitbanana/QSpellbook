@@ -1,4 +1,4 @@
-import sys, textwrap, os
+import sys, textwrap, os, json
 from PyQt5.QtCore import *
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
@@ -6,6 +6,7 @@ import loader
 
 WB_FILENAME = "Spells.xlsx"
 CACHE_FILENAME = "spells.json"
+TAGS_FILENAME = "tags.json"
 
 PROGRAM_NAME = "QSpellbook"
 PROGRAM_AUTHOR = "Ethan Crooks"
@@ -426,6 +427,7 @@ class TagDialog(QDialog): # If remove=True, adding a tag. If remove=True, removi
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
+        self.initDataFiles()
         if os.path.isfile(CACHE_FILENAME):
             self.spellbook = loader.Spellbook.from_cache(CACHE_FILENAME)
         else:
@@ -441,6 +443,25 @@ class MainWindow(QMainWindow):
         self.initMenu()
         self.initStatusBar()
         self.show()
+
+    def initDataFiles(self):
+        head, tail = os.path.split(TAGS_FILENAME)
+        if head and not os.path.isdir(head): os.makedirs(head)
+        if not os.path.isfile(TAGS_FILENAME):
+            with open(TAGS_FILENAME, "w") as f:
+                f.write("{}")
+
+    def saveTags(self):
+        with open(TAGS_FILENAME, "w") as f:
+            f.write(json.dumps(self.tags))
+
+    def restoreTags(self):
+        with open(TAGS_FILENAME) as f:
+            data = json.loads(f.read())
+            self.tags = {int(key):data[key] for key in data}
+        self.tagBar.widget().reupTagBox()
+        self.updateTable(self.spells)
+        self.resizeTableCols()
 
     def applyFilters(self):
         mainCondition = lambda spell: self.filterCondition(spell) and self.tagCondition(spell)
@@ -527,12 +548,8 @@ class MainWindow(QMainWindow):
 
         table = QTableWidget(1, len(self.spellheaders))
         table.setHorizontalHeaderLabels(list(self.spellheaders.keys()))
-        #table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         table.setSelectionBehavior(QAbstractItemView.SelectRows)
-        #table.setSelectionMode(QAbstractItemView.ExtendedSelection)
         table.setSelectionMode(QAbstractItemView.NoSelection)
-        #table.setMinimumWidth(TABLE_MIN_WIDTH)
-        #table.setMinimumHeight(TABLE_MIN_HEIGHT)
         table.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
         table.setWordWrap(True)
         table.setContextMenuPolicy(Qt.CustomContextMenu)
@@ -541,7 +558,7 @@ class MainWindow(QMainWindow):
         self.table = table
 
         self.setSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.MinimumExpanding)
-        self.setWindowTitle("D&D")
+        self.setWindowTitle("QSpellbook")
         self.setCentralWidget(table)
 
     def addTag(self, row=None, bulk=False):
@@ -604,6 +621,9 @@ class MainWindow(QMainWindow):
         quitAction = fileMenu.addAction("&Quit")
 
         tagMenu = menuBar.addMenu("&Tags")
+        saveTagsAction = tagMenu.addAction("&Save Tags")
+        restoreTagsAction = tagMenu.addAction("&Restore Tags")
+        tagMenu.addSeparator()
         tagAllVisibleAction = tagMenu.addAction("&Tag All Visible")
         untagAllVisibleAction = tagMenu.addAction("&Untag All Visible")
         tagMenu.addSeparator()
@@ -622,6 +642,8 @@ class MainWindow(QMainWindow):
 
         quitAction.triggered.connect(lambda: app.exit(0))
 
+        saveTagsAction.triggered.connect(self.saveTags)
+        restoreTagsAction.triggered.connect(self.restoreTags)
         tagAllVisibleAction.triggered.connect(lambda: self.addTag(bulk=True))
         untagAllVisibleAction.triggered.connect(lambda: self.removeTag(bulk=True))
         wipeTagsAction.triggered.connect(lambda: self.wipeTags(visible=False))
