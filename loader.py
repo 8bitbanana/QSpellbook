@@ -4,7 +4,7 @@ from hashlib import sha256
 from pprint import pprint
 
 all_classes = ['Accursed', 'Æthera', 'Astromancer', 'Bard', 'Cleric', 'Druid', 'Inquisitor', 'Occultist', 'Odic', 'Odysseer', 'Paladin', 'Ranger', 'Runeshaper', 'Shaman', 'Sorcerer', 'Warden', 'Warlock', 'Wizard']
-default_wb = "Spells.xlsx"
+default_wb = "data\\Spells.xlsx"
 
 def read_row(ws, row):
     spell = OrderedDict()

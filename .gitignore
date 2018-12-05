@@ -1,3 +1,5 @@
-*
-!.gitignore
-!*.py
+*data
+*.bat
+*.spec
+*.idea
+*__pycache__

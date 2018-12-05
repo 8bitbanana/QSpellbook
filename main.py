@@ -4,9 +4,9 @@ from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
 import loader
 
-WB_FILENAME = "Spells.xlsx"
-CACHE_FILENAME = "spells.json"
-TAGS_FILENAME = "tags.json"
+WB_FILENAME = "data\\Spells.xlsx"
+CACHE_FILENAME = "data\\spells.json"
+TAGS_FILENAME = "data\\tags.json"
 
 PROGRAM_NAME = "QSpellbook"
 PROGRAM_AUTHOR = "Ethan Crooks"
@@ -445,6 +445,8 @@ class MainWindow(QMainWindow):
         self.show()
 
     def initDataFiles(self):
+        head, tail = os.path.split(CACHE_FILENAME)
+        if head and not os.path.isdir(head): os.makedirs(head)
         head, tail = os.path.split(TAGS_FILENAME)
         if head and not os.path.isdir(head): os.makedirs(head)
         if not os.path.isfile(TAGS_FILENAME):
