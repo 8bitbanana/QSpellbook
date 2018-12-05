@@ -1,6 +1,6 @@
 import openpyxl, json
 from collections import OrderedDict
-from hashlib import sha256
+from hashlib import sha1
 from pprint import pprint
 
 all_classes = ['Accursed', 'Æthera', 'Astromancer', 'Bard', 'Cleric', 'Druid', 'Inquisitor', 'Occultist', 'Odic', 'Odysseer', 'Paladin', 'Ranger', 'Runeshaper', 'Shaman', 'Sorcerer', 'Warden', 'Warlock', 'Wizard']
@@ -58,7 +58,7 @@ class Spell:
         return self.name
 
     def __hash__(self): # https://stackoverflow.com/questions/5884066/hashing-a-dictionary
-        return int(sha256(repr(sorted(self.__dict__.items())).encode("utf-8")).hexdigest(), 16)
+        return int(sha1(repr(sorted(self.__dict__.items())).encode("utf-8")).hexdigest(), 16)
 
 class Spellbook:
 
