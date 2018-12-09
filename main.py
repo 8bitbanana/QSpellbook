@@ -281,24 +281,7 @@ class FilterBar(QWidget):
     def applyFilters(self):
         conditions = []
         if self.nameEdit.text().strip() != "":
-            if self.nameEdit.text()[0] == "/":
-                error = None
-                condition = None
-                runStr = "lambda spell: {}".format(self.nameEdit.text()[1:])
-                try:
-                    condition = eval(runStr)
-                except Exception as e:
-                    error = e
-                try:
-                    self.parent.spellbook.search(condition)
-                except Exception as e:
-                    error = e
-                if error:
-                    print(error)
-                else:
-                    conditions.append(condition)
-            else:
-                conditions.append(lambda x: self.nameEdit.text().strip().lower() in x.name.lower())
+            conditions.append(lambda x: self.nameEdit.text().strip().lower() in x.name.lower())
         if self.levelCheckBox.isChecked():
             conditions.append(lambda x: x.level == self.levelSlider.value())
         classes = self.collectClasses()
