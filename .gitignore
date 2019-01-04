@@ -1,5 +1,7 @@
-*data
 *.bat
 *.spec
-*.idea
+/.idea*
+/data*
+/build*
+/dist*
 *__pycache__
