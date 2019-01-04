@@ -444,6 +444,16 @@ class MainWindow(QMainWindow):
         self.initStatusBar()
         self.show()
 
+    def reloadSpellbook(self):
+        self.filterCondition = lambda spell: True
+        self.tagCondition = lambda spell: True
+        os.remove(CACHE_FILENAME)
+        self.spellbook = loader.Spellbook.from_workbook(WB_FILENAME)
+        self.spellbook.to_cache(CACHE_FILENAME)
+        self.updateTable(self.spellbook.spells)
+        self.resizeTableRows()
+        self.resizeTableCols()
+
     def initDataFiles(self):
         head, tail = os.path.split(CACHE_FILENAME)
         if head and not os.path.isdir(head): os.makedirs(head)
@@ -620,6 +630,7 @@ class MainWindow(QMainWindow):
         menuBar = self.menuBar()
 
         fileMenu = menuBar.addMenu("&File")
+        reloadAction = fileMenu.addAction("&Reload from file")
         quitAction = fileMenu.addAction("&Quit")
 
         tagMenu = menuBar.addMenu("&Tags")
@@ -642,6 +653,7 @@ class MainWindow(QMainWindow):
         tagBarAction = windowMenu.addAction("&Tags")
         tagBarAction.setCheckable(True)
 
+        reloadAction.triggered.connect(self.reloadSpellbook)
         quitAction.triggered.connect(lambda: app.exit(0))
 
         saveTagsAction.triggered.connect(self.saveTags)
