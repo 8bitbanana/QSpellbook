@@ -533,6 +533,7 @@ class MainWindow(QMainWindow):
         table.customContextMenuRequested.connect(self.showTableContextMenu)
 
         self.table = table
+        self.table.sortByColumn(0, Qt.AscendingOrder)
 
         self.setSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.MinimumExpanding)
         self.setWindowTitle("QSpellbook")
@@ -791,7 +792,7 @@ class MainWindow(QMainWindow):
                 self.table.setItem(x, y, item)
         self.countLabel.setText("Count: "+str(len(spells)))
         self.table.setSortingEnabled(True)
-        self.table.sortByColumn(0, Qt.AscendingOrder)
+        #self.table.sortByColumn(0, Qt.AscendingOrder)
 
     def resizeTableCols(self, resizeTable=False):
         self.table.horizontalHeader().setSectionResizeMode(QHeaderView.Fixed)
