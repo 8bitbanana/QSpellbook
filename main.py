@@ -703,13 +703,15 @@ class MainWindow(QMainWindow):
     def showTableContextMenu(self, pos):
         item = self.table.itemAt(pos)
         if not item: return
+        row = item.unsortedRow
+        print(row)
         contextMenu = QMenu()
 
         addTagAction = contextMenu.addAction("&Add Tag")
-        addTagAction.triggered.connect(lambda: self.addTag(item.row()))
-        if hash(self.spells[item.row()]) in self.tags:
+        addTagAction.triggered.connect(lambda: self.addTag(row))
+        if hash(self.spells[row]) in self.tags:
             removeTagAction = contextMenu.addAction("&Remove Tag")
-            removeTagAction.triggered.connect(lambda: self.removeTag(item.row()))
+            removeTagAction.triggered.connect(lambda: self.removeTag(row))
 
         contextMenu.exec(QCursor.pos())
 
@@ -783,6 +785,7 @@ class MainWindow(QMainWindow):
             for y, cell in enumerate(row):
                 item = QTableWidgetItem(str(row[y]['value'](spell)))
                 item.setFlags(TABLEITEM_FLAGS_NOEDIT)
+                item.unsortedRow = x
                 if row[y]["tooltip"] != None:
                     item.setToolTip(row[y]['tooltip'](spell))
                 self.table.setItem(x, y, item)
