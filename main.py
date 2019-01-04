@@ -4,7 +4,7 @@ from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
 import loader
 
-WB_FILENAME = "data\\Spells.xlsx"
+WB_DEFAULT_FILENAME = "data\\Spells.xlsx"
 CACHE_FILENAME = "data\\spells.json"
 TAGS_FILENAME = "data\\tags.json"
 
@@ -428,59 +428,24 @@ class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
         self.initDataFiles()
+        self.settings = QSettings(PROGRAM_AUTHOR, PROGRAM_NAME)
+        self.spellspreadsheet = self.settings.value("spreadsheet", WB_DEFAULT_FILENAME)
+        if not os.path.isfile(self.spellspreadsheet):
+            self.setSpellbook()
         if os.path.isfile(CACHE_FILENAME):
             self.spellbook = loader.Spellbook.from_cache(CACHE_FILENAME)
         else:
-            self.spellbook = loader.Spellbook.from_workbook(WB_FILENAME)
+            self.spellbook = loader.Spellbook.from_workbook(self.spellspreadsheet)
             self.spellbook.to_cache(CACHE_FILENAME)
         self.filterCondition = lambda spell: True
         self.tagCondition = lambda spell: True
         self.spells = []
         self.tags = {}
-        self.settings = QSettings(PROGRAM_AUTHOR, PROGRAM_NAME)
         self.initUI()
         self.initDockWidgets()
         self.initMenu()
         self.initStatusBar()
         self.show()
-
-    def reloadSpellbook(self):
-        self.filterCondition = lambda spell: True
-        self.tagCondition = lambda spell: True
-        os.remove(CACHE_FILENAME)
-        self.spellbook = loader.Spellbook.from_workbook(WB_FILENAME)
-        self.spellbook.to_cache(CACHE_FILENAME)
-        self.updateTable(self.spellbook.spells)
-        self.resizeTableRows()
-        self.resizeTableCols()
-
-    def initDataFiles(self):
-        head, tail = os.path.split(CACHE_FILENAME)
-        if head and not os.path.isdir(head): os.makedirs(head)
-        head, tail = os.path.split(TAGS_FILENAME)
-        if head and not os.path.isdir(head): os.makedirs(head)
-        if not os.path.isfile(TAGS_FILENAME):
-            with open(TAGS_FILENAME, "w") as f:
-                f.write("{}")
-
-    def saveTags(self):
-        with open(TAGS_FILENAME, "w") as f:
-            f.write(json.dumps(self.tags))
-
-    def restoreTags(self):
-        with open(TAGS_FILENAME) as f:
-            data = json.loads(f.read())
-            self.tags = {int(key):data[key] for key in data}
-        self.tagBar.widget().reupTagBox()
-        self.updateTable(self.spells)
-        self.resizeTableCols()
-
-    def applyFilters(self):
-        mainCondition = lambda spell: self.filterCondition(spell) and self.tagCondition(spell)
-        spells = self.spellbook.search(mainCondition)
-        self.updateTable(spells)
-        self.resizeTableCols()
-        self.resizeTableRows()
 
     def initUI(self):
         self.spellheaders = {
@@ -573,6 +538,61 @@ class MainWindow(QMainWindow):
         self.setWindowTitle("QSpellbook")
         self.setCentralWidget(table)
 
+    def setSpellbook(self):
+        dialog = QFileDialog()
+        dialog.setAcceptMode(QFileDialog.AcceptOpen)
+        dialog.setFileMode(QFileDialog.ExistingFile)
+        dialog.setNameFilter("*.xlsx")
+        dialog.setDirectory(os.getcwd())
+        if dialog.exec() and len(dialog.selectedFiles()) > 0:
+            filepath = dialog.selectedFiles()[0]
+            filepath = os.path.relpath(filepath)
+            if os.path.exists(filepath):
+                self.spellspreadsheet = filepath
+                self.settings.setValue("spreadsheet", filepath)
+
+    def reloadSpellbook(self):
+        if not os.path.exists(self.spellspreadsheet):
+            QMessageBox.critical(self, "Reload Error", "The currently loaded spreadsheet no longer exists.\nPlease select a new spreadsheet.")
+            self.setSpellbook()
+        self.filterCondition = lambda spell: True
+        self.tagCondition = lambda spell: True
+        os.remove(CACHE_FILENAME)
+        self.spellbook = loader.Spellbook.from_workbook(self.spellspreadsheet)
+        self.spellbook.to_cache(CACHE_FILENAME)
+        self.updateTable(self.spellbook.spells)
+        self.dirLabel.setText(self.spellspreadsheet + " ") # Space for padding
+        self.resizeTableRows()
+        self.resizeTableCols()
+
+    def initDataFiles(self):
+        head, tail = os.path.split(CACHE_FILENAME)
+        if head and not os.path.isdir(head): os.makedirs(head)
+        head, tail = os.path.split(TAGS_FILENAME)
+        if head and not os.path.isdir(head): os.makedirs(head)
+        if not os.path.isfile(TAGS_FILENAME):
+            with open(TAGS_FILENAME, "w") as f:
+                f.write("{}")
+
+    def saveTags(self):
+        with open(TAGS_FILENAME, "w") as f:
+            f.write(json.dumps(self.tags))
+
+    def restoreTags(self):
+        with open(TAGS_FILENAME) as f:
+            data = json.loads(f.read())
+            self.tags = {int(key):data[key] for key in data}
+        self.tagBar.widget().reupTagBox()
+        self.updateTable(self.spells)
+        self.resizeTableCols()
+
+    def applyFilters(self):
+        mainCondition = lambda spell: self.filterCondition(spell) and self.tagCondition(spell)
+        spells = self.spellbook.search(mainCondition)
+        self.updateTable(spells)
+        self.resizeTableCols()
+        self.resizeTableRows()
+
     def addTag(self, row=None, bulk=False):
         spell = self.spells[row] if not bulk else None
         dialog = TagDialog(self.tags, spell, remove=False, bulk=bulk)
@@ -630,7 +650,8 @@ class MainWindow(QMainWindow):
         menuBar = self.menuBar()
 
         fileMenu = menuBar.addMenu("&File")
-        reloadAction = fileMenu.addAction("&Reload from file")
+        openNewAction = fileMenu.addAction("&Open New File")
+        reloadAction = fileMenu.addAction("&Reload Current File")
         quitAction = fileMenu.addAction("&Quit")
 
         tagMenu = menuBar.addMenu("&Tags")
@@ -653,6 +674,8 @@ class MainWindow(QMainWindow):
         tagBarAction = windowMenu.addAction("&Tags")
         tagBarAction.setCheckable(True)
 
+        openNewAction.triggered.connect(self.setSpellbook)
+        openNewAction.triggered.connect(self.reloadSpellbook)
         reloadAction.triggered.connect(self.reloadSpellbook)
         quitAction.triggered.connect(lambda: app.exit(0))
 
@@ -708,9 +731,12 @@ class MainWindow(QMainWindow):
 
     def initStatusBar(self):
         statusBar = self.statusBar()
+        dirLabel = QLabel(self.spellspreadsheet + " ") # Space for padding
         countLabel = QLabel("Count: 0")
+        statusBar.addPermanentWidget(dirLabel)
         statusBar.addPermanentWidget(countLabel)
         #statusBar.setSizeGripEnabled(False)
+        self.dirLabel = dirLabel
         self.countLabel = countLabel
 
     def initDockWidgets(self):
