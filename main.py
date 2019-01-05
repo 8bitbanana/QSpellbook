@@ -371,7 +371,7 @@ class TagBar(QWidget):
             [tag for tag in tags if tag in self.allTags[hash(spell)]] == tags)
         self.parent.applyFilters()
 
-class TagDialog(QDialog): # If remove=True, adding a tag. If remove=True, removing a tag
+class TagDialog(QDialog): # If remove=False, adding a tag. If remove=True, removing a tag
     def __init__(self, tags, selectedSpell=None, remove=False, bulk=False):
         super().__init__()
         self.selectedSpell = selectedSpell
