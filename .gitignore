@@ -1,4 +1,5 @@
 *.bat
+*.xlsx
 *.spec
 /.idea*
 /data*

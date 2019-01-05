@@ -434,7 +434,9 @@ class MainWindow(QMainWindow):
         self.settings = QSettings(PROGRAM_AUTHOR, PROGRAM_NAME)
         self.spellspreadsheet = self.settings.value("spreadsheet", WB_DEFAULT_FILENAME)
         if not os.path.isfile(self.spellspreadsheet):
-            self.setSpellbook()
+            #QMessageBox.information(self, "Select Spellbook","Please select your Excel spreadsheet spellbook.")
+            result = self.setSpellbook()
+            if not result: sys.exit(1)
         if os.path.isfile(CACHE_FILENAME):
             self.spellbook = loader.Spellbook.from_cache(CACHE_FILENAME)
         else:
@@ -544,6 +546,7 @@ class MainWindow(QMainWindow):
 
     def setSpellbook(self):
         dialog = QFileDialog()
+        dialog.setWindowTitle("Select Excel Spellbook")
         dialog.setAcceptMode(QFileDialog.AcceptOpen)
         dialog.setFileMode(QFileDialog.ExistingFile)
         dialog.setNameFilter("*.xlsx")
@@ -554,6 +557,8 @@ class MainWindow(QMainWindow):
             if os.path.exists(filepath):
                 self.spellspreadsheet = filepath
                 self.settings.setValue("spreadsheet", filepath)
+                return True
+        return False
 
     def reloadSpellbook(self):
         if not os.path.exists(self.spellspreadsheet):
@@ -568,6 +573,10 @@ class MainWindow(QMainWindow):
         self.dirLabel.setText(self.spellspreadsheet + " ") # Space for padding
         self.resizeTableRows()
         self.resizeTableCols()
+
+    def reloadFromFileWrapper(self):
+        result = self.setSpellbook()
+        if result: self.reloadSpellbook()
 
     def initDataFiles(self):
         head, tail = os.path.split(CACHE_FILENAME)
@@ -678,8 +687,7 @@ class MainWindow(QMainWindow):
         tagBarAction = windowMenu.addAction("&Tags")
         tagBarAction.setCheckable(True)
 
-        openNewAction.triggered.connect(self.setSpellbook)
-        openNewAction.triggered.connect(self.reloadSpellbook)
+        openNewAction.triggered.connect(self.reloadFromFileWrapper)
         reloadAction.triggered.connect(self.reloadSpellbook)
         quitAction.triggered.connect(lambda: app.exit(0))
 
