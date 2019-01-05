@@ -4,9 +4,12 @@ from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
 import loader
 
-WB_DEFAULT_FILENAME = "data\\Spells.xlsx"
-CACHE_FILENAME = "data\\spells.json"
-TAGS_FILENAME = "data\\tags.json"
+APPDATA = QStandardPaths.standardLocations(QStandardPaths.AppDataLocation)[0]
+APPDATA = os.path.join(APPDATA, "QSpellbook")
+
+WB_DEFAULT_FILENAME = "Spells.xlsx"
+CACHE_FILENAME = os.path.join(APPDATA, "spells.json")
+TAGS_FILENAME = os.path.join(APPDATA, "tags.json")
 
 PROGRAM_NAME = "QSpellbook"
 PROGRAM_AUTHOR = "Ethan Crooks"
