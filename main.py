@@ -195,7 +195,7 @@ class FilterBar(QWidget):
         levelLabel = QLabel("LEVEL 0")
         levelLabel.setAlignment(Qt.AlignHCenter)
         levelCheckBox = QCheckBox()
-        maxLevel = max([x.level for x in self.parent.spellbook.spells])
+        maxLevel = max((x.level for x in self.parent.spellbook.spells))
         levelSlider = QSlider(Qt.Horizontal)
         levelSlider.setMinimum(0)
         levelSlider.setMaximum(maxLevel)
@@ -241,6 +241,7 @@ class FilterBar(QWidget):
         levelCheckBox.stateChanged.connect(self.applyFiltersAutoWrapper)
         levelSlider.valueChanged.connect(self.applyFiltersAutoWrapper)
         autoCheckBox.stateChanged.connect(self.applyFiltersAutoWrapper)
+        autoCheckBox.stateChanged.connect(lambda state: applyButton.setEnabled(not state))
 
         classSelectAllButton.clicked.connect(lambda: self.classesSetEnabled(True))
         classSelectNoneButton.clicked.connect(lambda: self.classesSetEnabled(False))
