@@ -451,6 +451,7 @@ class MainWindow(QMainWindow):
         self.initDockWidgets()
         self.initMenu()
         self.initStatusBar()
+        self.restoreTags()
         self.show()
 
     def initUI(self):
@@ -629,6 +630,7 @@ class MainWindow(QMainWindow):
             self.updateTable(self.spells)
             self.resizeTableCols()
             self.tagBar.widget().reupTagBox()
+            self.saveTags()
 
     def removeTag(self, row=None, bulk=False):
         spell = self.spells[row] if not bulk else None
@@ -648,6 +650,7 @@ class MainWindow(QMainWindow):
             self.updateTable(self.spells)
             self.resizeTableCols()
             self.tagBar.widget().reupTagBox()
+            self.saveTags()
 
     def wipeTags(self, visible=False):
         if visible:
@@ -659,6 +662,7 @@ class MainWindow(QMainWindow):
         self.updateTable(self.spells)
         self.resizeTableCols()
         self.tagBar.widget().reupTagBox()
+        self.saveTags()
 
     def initMenu(self):
         menuBar = self.menuBar()
