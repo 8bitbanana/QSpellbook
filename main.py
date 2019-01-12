@@ -4,6 +4,8 @@ from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
 import loader
 
+VERSION = "v1.1"
+
 APPDATA = QStandardPaths.standardLocations(QStandardPaths.AppDataLocation)[0]
 APPDATA = os.path.join(APPDATA, "QSpellbook")
 
@@ -161,6 +163,13 @@ class FilterBar(QWidget):
         titleLabel = QLabel("<h1>Filters</h1>")
         titleLabel.setMinimumWidth(300)
 
+        clearButton = QPushButton("Clear")
+
+        titleHBox = QHBoxLayout()
+        titleHBox.addWidget(titleLabel)
+        titleHBox.addStretch(1)
+        titleHBox.addWidget(clearButton)
+
         nameLabel = QLabel("NAME")
         nameLabel.setAlignment(Qt.AlignHCenter)
 
@@ -218,7 +227,7 @@ class FilterBar(QWidget):
         applyHBox.addWidget(autoCheckBox)
 
         mainVBox = QVBoxLayout()
-        mainVBox.addWidget(titleLabel)
+        mainVBox.addLayout(titleHBox)
         mainVBox.addWidget(borderLine())
         mainVBox.addWidget(nameLabel)
         mainVBox.addWidget(nameEdit)
@@ -245,6 +254,7 @@ class FilterBar(QWidget):
 
         classSelectAllButton.clicked.connect(lambda: self.classesSetEnabled(True))
         classSelectNoneButton.clicked.connect(lambda: self.classesSetEnabled(False))
+        clearButton.clicked.connect(self.clearFilters)
         applyButton.clicked.connect(self.applyFilters)
 
         self.nameEdit = nameEdit
@@ -253,11 +263,14 @@ class FilterBar(QWidget):
         self.levelCheckBox = levelCheckBox
         self.levelSlider = levelSlider
         self.autoCheckBox = autoCheckBox
+        self.clearButton = clearButton
 
+        self.updateClearButton()
         self.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.MinimumExpanding)
         self.setLayout(mainVBox)
 
     def applyFiltersAutoWrapper(self):
+        self.updateClearButton()
         if self.autoCheckBox.isChecked():
             self.applyFilters()
 
@@ -281,6 +294,17 @@ class FilterBar(QWidget):
         for widget in range(self.classRightVBox.count()):
             classCheckBox = self.classRightVBox.itemAt(widget).widget()
             classCheckBox.setCheckState(enabled)
+
+    def clearFilters(self):
+        self.nameEdit.setText("")
+        self.classesSetEnabled(False)
+        self.levelCheckBox.setChecked(False)
+        if self.autoCheckBox.isChecked():
+            self.applyFilters()
+
+    def updateClearButton(self):
+        enabled = self.nameEdit.text().strip() != "" or self.levelCheckBox.isChecked() or len(self.collectClasses()) > 0
+        self.clearButton.setEnabled(enabled)
 
     def applyFilters(self):
         conditions = []
@@ -543,7 +567,7 @@ class MainWindow(QMainWindow):
         self.table.sortByColumn(0, Qt.AscendingOrder)
 
         self.setSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.MinimumExpanding)
-        self.setWindowTitle("QSpellbook")
+        self.setWindowTitle("QSpellbook ({})".format(VERSION))
         self.setCentralWidget(table)
 
     def setSpellbook(self):
