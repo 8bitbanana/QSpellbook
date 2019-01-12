@@ -6,6 +6,8 @@ import loader
 
 VERSION = "v1.1"
 
+# todo - Add line breaks for spell descriptions when expanded (function to only update descriptsion?
+
 APPDATA = QStandardPaths.standardLocations(QStandardPaths.AppDataLocation)[0]
 APPDATA = os.path.join(APPDATA, "QSpellbook")
 
@@ -743,6 +745,10 @@ class MainWindow(QMainWindow):
         reloadAction = fileMenu.addAction("&Reload Current File")
         quitAction = fileMenu.addAction("&Quit")
 
+        viewMenu = menuBar.addMenu("&View")
+        expandRowsAction = viewMenu.addAction("&Expand Rows")
+        expandRowsAction.setCheckable(True)
+
         tagMenu = menuBar.addMenu("&Tags")
         #saveTagsAction = tagMenu.addAction("&Save Tags")
         #restoreTagsAction = tagMenu.addAction("&Restore Tags")
@@ -769,6 +775,9 @@ class MainWindow(QMainWindow):
         openNewAction.triggered.connect(self.reloadFromFileWrapper)
         reloadAction.triggered.connect(self.reloadSpellbook)
         quitAction.triggered.connect(lambda: app.exit(0))
+
+        expandRowsAction.triggered.connect(self.resizeTableRows)
+        self.expandRowsAction = expandRowsAction
 
         #saveTagsAction.triggered.connect(self.saveTags)
         #restoreTagsAction.triggered.connect(self.restoreTags)
@@ -865,7 +874,7 @@ class MainWindow(QMainWindow):
         self.addDockWidget(Qt.LeftDockWidgetArea, visBar)
         self.addDockWidget(Qt.RightDockWidgetArea, tagBar)
 
-    def updateTable(self, spells):
+    def updateTable(self, spells, alignment=Qt.AlignVCenter):
         self.spells = spells
         self.table.setSortingEnabled(False)
         self.table.clearContents()
@@ -878,6 +887,7 @@ class MainWindow(QMainWindow):
             for y, cell in enumerate(row):
                 item = QTableWidgetItem(str(row[y]['value'](spell)))
                 item.setFlags(TABLEITEM_FLAGS_NOEDIT)
+                item.setTextAlignment(alignment)
                 item.unsortedRow = x
                 if row[y]["tooltip"] != None:
                     item.setToolTip(row[y]['tooltip'](spell))
@@ -906,9 +916,10 @@ class MainWindow(QMainWindow):
 
     def resizeTableRows(self):
         self.table.resizeRowsToContents()
-        for row in range(self.table.rowCount()):
-            if self.table.rowHeight(row) >= TABLE_MAX_ROW_HEIGHT:
-                self.table.setRowHeight(row, TABLE_MAX_ROW_HEIGHT)
+        if not self.expandRowsAction.isChecked():
+            for row in range(self.table.rowCount()):
+                if self.table.rowHeight(row) >= TABLE_MAX_ROW_HEIGHT:
+                    self.table.setRowHeight(row, TABLE_MAX_ROW_HEIGHT)
 
     def layoutCleanup(self):
         self.updateTable(self.spellbook.spells)
