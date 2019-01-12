@@ -1,4 +1,4 @@
-import sys, textwrap, os, json
+import sys, textwrap, os, json, shutil
 from PyQt5.QtCore import *
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
@@ -589,6 +589,53 @@ class MainWindow(QMainWindow):
             with open(TAGS_FILENAME, "w") as f:
                 f.write("{}")
 
+    def importTags(self):
+        dialog = QFileDialog()
+        dialog.setAcceptMode(QFileDialog.AcceptOpen)
+        dialog.setFileMode(QFileDialog.ExistingFile)
+        dialog.setDirectory(os.getcwd())
+        dialog.setWindowTitle("Import Tags")
+        dialog.setNameFilter("*.tags")
+        if dialog.exec() and len(dialog.selectedFiles()) > 0:
+            filepath = dialog.selectedFiles()[0]
+            msgBox = QMessageBox()
+            msgBox.setText("Are you sure you want to import?")
+            msgBox.setInformativeText("This will replace all current tags")
+            msgBox.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
+            if msgBox.exec() == QMessageBox.Yes:
+                try: # QA tests
+                    with open(filepath) as f:
+                        data = json.loads(f.read()) # Does it json parse?
+                        if type(data) != dict: raise ValueError() # Is it a dictionary?
+                        for key in data: # Is every value...
+                            if type(key) != str: raise ValueError() # A str?
+                            _ = int(key) # A number?
+                            value = data[key] # ...and connected to...
+                            if type(value) != list: raise ValueError() # A list?
+                            for entry in value: # of strs?
+                                if type(entry) != str: raise ValueError()
+                except json.JSONDecodeError:
+                    msgBox.critical(self, "Error", "Error importing tags\nTags file cannot be read\n(JSON decode error)")
+                except ValueError or KeyError:
+                    msgBox.critical(self, "Error", "Error importing tags\nTags file cannot be read\n(Misc read error)")
+                else:
+                    os.remove(TAGS_FILENAME)
+                    shutil.copyfile(filepath, TAGS_FILENAME)
+                    self.restoreTags()
+
+    def exportTags(self):
+        dialog = QFileDialog()
+        dialog.setAcceptMode(QFileDialog.AcceptSave)
+        dialog.setDirectory(os.getcwd())
+        dialog.setWindowTitle("Export Tags")
+        dialog.setNameFilter("*.tags")
+        if dialog.exec() and len(dialog.selectedFiles()) > 0:
+            self.saveTags()
+            filepath = dialog.selectedFiles()[0]
+            shutil.copyfile(TAGS_FILENAME, filepath)
+        else:
+            QMessageBox.warning(self, " ", "Tags not exported.")
+
     def saveTags(self):
         with open(TAGS_FILENAME, "w") as f:
             f.write(json.dumps(self.tags))
@@ -673,8 +720,11 @@ class MainWindow(QMainWindow):
         quitAction = fileMenu.addAction("&Quit")
 
         tagMenu = menuBar.addMenu("&Tags")
-        saveTagsAction = tagMenu.addAction("&Save Tags")
-        restoreTagsAction = tagMenu.addAction("&Restore Tags")
+        #saveTagsAction = tagMenu.addAction("&Save Tags")
+        #restoreTagsAction = tagMenu.addAction("&Restore Tags")
+        #tagMenu.addSeparator()
+        importTagsAction = tagMenu.addAction("&Import Tags")
+        exportTagsAction = tagMenu.addAction("&Export Tags")
         tagMenu.addSeparator()
         tagAllVisibleAction = tagMenu.addAction("&Tag All Visible")
         untagAllVisibleAction = tagMenu.addAction("&Untag All Visible")
@@ -696,8 +746,10 @@ class MainWindow(QMainWindow):
         reloadAction.triggered.connect(self.reloadSpellbook)
         quitAction.triggered.connect(lambda: app.exit(0))
 
-        saveTagsAction.triggered.connect(self.saveTags)
-        restoreTagsAction.triggered.connect(self.restoreTags)
+        #saveTagsAction.triggered.connect(self.saveTags)
+        #restoreTagsAction.triggered.connect(self.restoreTags)
+        importTagsAction.triggered.connect(self.importTags)
+        exportTagsAction.triggered.connect(self.exportTags)
         tagAllVisibleAction.triggered.connect(lambda: self.addTag(bulk=True))
         untagAllVisibleAction.triggered.connect(lambda: self.removeTag(bulk=True))
         wipeTagsAction.triggered.connect(lambda: self.wipeTags(visible=False))
