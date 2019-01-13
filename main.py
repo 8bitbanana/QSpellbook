@@ -5,9 +5,7 @@ from PyQt5.QtGui import *
 import loader
 
 VERSION = "v1.1"
-DEBUG = True
-
-# todo - Add line breaks for spell descriptions when expanded (function to only update descriptsion?
+DEBUG = False
 
 APPDATA = QStandardPaths.standardLocations(QStandardPaths.AppDataLocation)[0]
 APPDATA = os.path.join(APPDATA, "QSpellbook")
@@ -32,6 +30,7 @@ TABLE_MAX_RESIZE_WIDTH = 1200
 COLUMN_LONG = 300
 COLUMN_MED = 200
 COLUMN_SHORT = 100
+COLUMN_TINY = 70
 
 TABLE_MAX_ROW_HEIGHT = 50
 TOOLTIP_WIDTH = 150
@@ -491,7 +490,7 @@ class MainWindow(QMainWindow):
             "Level": {
                 "value": lambda spell: spell.level,
                 "tooltip": None,
-                "size": COLUMN_SHORT,
+                "size": COLUMN_TINY,
                 "enabled": True
             },
             "Classes": {
@@ -504,7 +503,7 @@ class MainWindow(QMainWindow):
                 "value": lambda spell: spell.origin,
                 "tooltip": None,
                 "size": COLUMN_SHORT,
-                "enabled": True
+                "enabled": False
             },
             "School": {
                 "value": lambda spell: spell.school,
@@ -521,20 +520,20 @@ class MainWindow(QMainWindow):
             "Time": {
                 "value": lambda spell: spell.time,
                 "tooltip": None,
-                "size": COLUMN_SHORT,
+                "size": COLUMN_TINY,
                 "enabled": True
             },
             "Range": {
                 "value": lambda spell: spell.range,
                 "tooltip": None,
-                "size": COLUMN_SHORT,
+                "size": COLUMN_TINY,
                 "enabled": True
             },
             "Comp": {
                 "value": lambda spell: spell.compstr,
                 "tooltip": lambda spell: pprintComp(spell),
                 "size": COLUMN_SHORT,
-                "enabled": False
+                "enabled": True
             },
             "Duration": {
                 "value": lambda spell: spell.duration,
