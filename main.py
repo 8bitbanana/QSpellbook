@@ -5,6 +5,7 @@ from PyQt5.QtGui import *
 import loader
 
 VERSION = "v1.1"
+DEBUG = True
 
 # todo - Add line breaks for spell descriptions when expanded (function to only update descriptsion?
 
@@ -151,8 +152,7 @@ class VisibilityBar(QWidget):
             columns[colCheckBox.col] = colCheckBox.isChecked()
         for col in columns:
             self.parent.spellheaders[col]['enabled'] = columns[col]
-        self.parent.updateTable(self.parent.spells)
-        self.parent.resizeTableCols()
+        self.parent.applyFilters()
 
 class FilterBar(QWidget):
     def __init__(self, parent):
@@ -549,7 +549,8 @@ class MainWindow(QMainWindow):
                 "enabled": True
             },
             "Description": {
-                "value": lambda spell: spell.description.replace("\n", " ") if spell.description else None,
+                #"value": lambda spell: spell.description.replace("\n", " ") if spell.description else None,
+                "value": self.descriptionlogic,
                 "tooltip": lambda spell: addLineBreaks(str(spell.description)),
                 "size": COLUMN_LONG,
                 "enabled": True
@@ -564,6 +565,7 @@ class MainWindow(QMainWindow):
         table.setWordWrap(True)
         table.setContextMenuPolicy(Qt.CustomContextMenu)
         table.customContextMenuRequested.connect(self.showTableContextMenu)
+        #table.horizontalHeader().sectionClicked.connect(self.resizeTableRows)
 
         self.table = table
         self.table.sortByColumn(0, Qt.AscendingOrder)
@@ -571,6 +573,13 @@ class MainWindow(QMainWindow):
         self.setSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.MinimumExpanding)
         self.setWindowTitle("QSpellbook ({})".format(VERSION))
         self.setCentralWidget(table)
+
+    def descriptionlogic(self, spell):
+        if not spell.description: return None
+        if self.expandRowsAction.isChecked():
+            return spell.description
+        else:
+            return spell.description.replace("\n", " ")
 
     def setSpellbook(self):
         dialog = QFileDialog()
@@ -599,8 +608,8 @@ class MainWindow(QMainWindow):
         self.spellbook.to_cache(CACHE_FILENAME)
         self.updateTable(self.spellbook.spells)
         self.dirLabel.setText(self.spellspreadsheet + " ") # Space for padding
-        self.resizeTableRows()
         self.resizeTableCols()
+        self.resizeTableRows()
 
     def reloadFromFileWrapper(self):
         result = self.setSpellbook()
@@ -772,10 +781,16 @@ class MainWindow(QMainWindow):
         tagBarAction = windowMenu.addAction("&Tags")
         tagBarAction.setCheckable(True)
 
+        if DEBUG:
+            debugAction = menuBar.addAction("Debug")
+            debugAction.triggered.connect(self.debug)
+
         openNewAction.triggered.connect(self.reloadFromFileWrapper)
         reloadAction.triggered.connect(self.reloadSpellbook)
         quitAction.triggered.connect(lambda: app.exit(0))
 
+        expandRowsAction.triggered.connect(lambda: self.updateTable())
+        expandRowsAction.triggered.connect(lambda: self.resizeTableCols())
         expandRowsAction.triggered.connect(self.resizeTableRows)
         self.expandRowsAction = expandRowsAction
 
@@ -801,6 +816,9 @@ class MainWindow(QMainWindow):
         tagBarAction.changed.connect(lambda: self.tagBar.setHidden(not tagBarAction.isChecked()))
         self.tagBar.visibilityChanged.connect(lambda: tagBarAction.setChecked(not self.tagBar.isHidden()))
         tagBarAction.setChecked(not self.tagBar.isHidden())
+
+    def debug(self):
+        pass
 
     def showTableContextMenu(self, pos):
         item = self.table.itemAt(pos)
@@ -874,7 +892,8 @@ class MainWindow(QMainWindow):
         self.addDockWidget(Qt.LeftDockWidgetArea, visBar)
         self.addDockWidget(Qt.RightDockWidgetArea, tagBar)
 
-    def updateTable(self, spells, alignment=Qt.AlignVCenter):
+    def updateTable(self, spells=None, alignment=Qt.AlignVCenter):
+        spells = spells if spells else self.spells
         self.spells = spells
         self.table.setSortingEnabled(False)
         self.table.clearContents()
@@ -915,8 +934,11 @@ class MainWindow(QMainWindow):
             self.table.resize(max(totalSize, self.table.width()), self.table.height())
 
     def resizeTableRows(self):
-        self.table.resizeRowsToContents()
-        if not self.expandRowsAction.isChecked():
+        if self.expandRowsAction.isChecked():
+            self.table.resizeRowsToContents()
+            self.resizeTableCols()
+        else:
+            self.table.resizeRowsToContents()
             for row in range(self.table.rowCount()):
                 if self.table.rowHeight(row) >= TABLE_MAX_ROW_HEIGHT:
                     self.table.setRowHeight(row, TABLE_MAX_ROW_HEIGHT)
