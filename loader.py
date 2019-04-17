@@ -10,7 +10,7 @@ def read_row(ws, row):
     spell = OrderedDict()
     for cell in ws.iter_cols(min_row=row, max_row=row):
         cell = cell[0]
-        header = ws[cell.column+"1"].value
+        header = ws[cell.column_letter+"1"].value
         spell[header] = cell.value
     return spell
 
