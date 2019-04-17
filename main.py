@@ -406,9 +406,9 @@ class TagDialog(QDialog): # If remove=False, adding a tag. If remove=True, remov
         self.tags = tags
         self.tag = None
         self.remove = remove
-        self.bulk = bulk
-        self.initUI()
-
+        self.bulk = bulk # Bulk inticates that we are adding/removing a tag from all shown spells
+        self.initUI()    # This means this dialog should display all tags rather than just the tags on a spell
+                         # Is bulk is true, then selectedSpell should be None (as it is ignored)
     def getAllTags(self):
         return {self.tags[x][y] for x in self.tags for y in range(len(self.tags[x]))}
 
@@ -687,7 +687,7 @@ class MainWindow(QMainWindow):
         self.updateTable(spells)
         self.resizeTableCols()
         self.resizeTableRows()
-
+        
     def addTag(self, row=None, bulk=False):
         spell = self.spells[row] if not bulk else None
         dialog = TagDialog(self.tags, spell, remove=False, bulk=bulk)
