@@ -300,8 +300,7 @@ class FilterBar(QWidget):
         self.nameEdit.setText("")
         self.classesSetEnabled(False)
         self.levelCheckBox.setChecked(False)
-        if self.autoCheckBox.isChecked():
-            self.applyFilters()
+        self.applyFiltersAutoWrapper()
 
     def updateClearButton(self):
         enabled = self.nameEdit.text().strip() != "" or self.levelCheckBox.isChecked() or len(self.collectClasses()) > 0

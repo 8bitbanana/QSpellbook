@@ -5,4 +5,6 @@
 /data*
 /build*
 /dist*
+/venv*
+/.vscode*
 *__pycache__
