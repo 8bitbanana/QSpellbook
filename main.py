@@ -5,7 +5,7 @@ from PyQt5.QtGui import *
 import loader
 
 VERSION = "v1.1"
-DEBUG = False
+DEBUG = True
 
 APPDATA = QStandardPaths.standardLocations(QStandardPaths.AppDataLocation)[0]
 APPDATA = os.path.join(APPDATA, "QSpellbook")
@@ -454,6 +454,86 @@ class TagDialog(QDialog): # If remove=False, adding a tag. If remove=True, remov
         self.tag = self.tagsList.currentItem().text()
         self.accept()
 
+class SettingsDialog(QDialog):
+    def __init__(self, currentSettings=dict()):
+        super().__init__()
+        self.settingsTemplate = {
+            "Basic": {
+                "expandComp": {
+                    "name":"Expand the 'Comp' column when Expand Rows is enabled",
+                    "description":
+                        "When Expand Rows is enabled, the comp column will show the full spells comp rather than the initials.",
+                    "type":"checkbox",
+                    "default":False
+                }
+            },
+            "Experimental": {
+                "updateTableProcessEvents" :{
+                    "name":"Process UI events during table update",
+                    "description":(
+                        "When the table is being updated, keep the UI responding by periodically processing new events.\n"
+                        "This means that during a long table update (such as when all the spells are loaded) the window shouldn't just freeze, and instead you should be able to scroll and stuff (to an extent).\n"
+                        "This is super hacky, so there may be bugs/performance issues when this is enabled."
+                    ),
+                    "type":"checkbox",
+                    "default":False
+                }
+            }
+        }
+        self.newSettings = self.generateSettingsDict(currentSettings)
+        print(self.newSettings)
+        self.initUI()
+
+    def generateSettingsDict(self, currentSettings):
+        settings = {}
+        for settingsGroup in self.settingsTemplate.values():
+            for settingkey, setting in settingsGroup.items():
+                if settingkey in currentSettings.keys():
+                    settings[settingkey] = currentSettings[settingkey]
+                else:
+                    settings[settingkey] = setting['default']
+        return settings
+
+    def closeDialog(self):
+        print(self.newSettings)
+        self.accept()
+
+    def settingsLambdaWrapper(self, key, value):
+        self.newSettings[key] = value
+
+    def initUI(self):
+        mainLayout = QVBoxLayout()
+        for groupName, settingsGroup in self.settingsTemplate.items():
+            groupBox = QGroupBox(groupName)
+            groupLayout = QVBoxLayout()
+            for settingkey, setting in settingsGroup.items():
+                if setting['type'] == "checkbox":
+                    checkbox = QCheckBox(setting['name'])
+                    checkbox.setToolTip(addLineBreaks(setting['description']))
+                    checkbox.stateChanged.connect(
+                        lambda state, settingkey=settingkey: self.settingsLambdaWrapper(settingkey, state==2)
+                    )
+                    groupLayout.addWidget(checkbox)
+                else:
+                    errorLabel = QLabel("Error - Invalid Setting")
+                    errorLabel.setToolTip("You shouldn't be seeing this!")
+                    groupLayout.addWidget(errorLabel)
+            groupBox.setLayout(groupLayout)
+            mainLayout.addWidget(groupBox)
+
+        doneButton = QPushButton("Done")
+        cancelButton = QPushButton("Cancel")
+
+        doneButton.clicked.connect(self.closeDialog)
+        cancelButton.clicked.connect(self.reject)
+
+        buttonHBox = QHBoxLayout()
+        buttonHBox.addWidget(doneButton)
+        buttonHBox.addWidget(cancelButton)
+        mainLayout.addLayout(buttonHBox)
+
+        self.setLayout(mainLayout)
+
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
@@ -820,7 +900,8 @@ class MainWindow(QMainWindow):
         tagBarAction.setChecked(not self.tagBar.isHidden())
 
     def debug(self):
-        pass
+        settingsDialog = SettingsDialog()
+        settingsDialog.exec()
 
     def showTableContextMenu(self, pos):
         item = self.table.itemAt(pos)
