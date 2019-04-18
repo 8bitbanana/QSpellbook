@@ -268,6 +268,8 @@ class FilterBar(QWidget):
 
         self.updateClearButton()
         self.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.MinimumExpanding)
+        margins = QMargins(0,0,10,0)
+        self.setContentsMargins(margins)
         self.setLayout(mainVBox)
 
     def applyFiltersAutoWrapper(self):
