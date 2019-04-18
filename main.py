@@ -4,8 +4,8 @@ from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
 import loader
 
-VERSION = "v1.1"
-DEBUG = True
+VERSION = "v1.2"
+DEBUG = False
 
 APPDATA = QStandardPaths.standardLocations(QStandardPaths.AppDataLocation)[0]
 APPDATA = os.path.join(APPDATA, "QSpellbook")
@@ -513,6 +513,7 @@ class SettingsDialog(QDialog):
         mainLayout.addLayout(buttonHBox)
 
         self.setLayout(mainLayout)
+        self.setWindowTitle("Preferences")
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -867,6 +868,7 @@ class MainWindow(QMainWindow):
         fileMenu = menuBar.addMenu("&File")
         openNewAction = fileMenu.addAction("&Open New File")
         reloadAction = fileMenu.addAction("&Reload Current File")
+        settingsAction = fileMenu.addAction("&Preferences")
         quitAction = fileMenu.addAction("&Quit")
 
         viewMenu = menuBar.addMenu("&View")
@@ -902,6 +904,7 @@ class MainWindow(QMainWindow):
 
         openNewAction.triggered.connect(self.reloadFromFileWrapper)
         reloadAction.triggered.connect(self.reloadSpellbook)
+        settingsAction.triggered.connect(self.openSettingsDialog)
         quitAction.triggered.connect(lambda: app.exit(0))
 
         expandRowsAction.triggered.connect(lambda: self.updateTable())
