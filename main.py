@@ -614,11 +614,9 @@ class MainWindow(QMainWindow):
                 "size": COLUMN_TINY,
                 "enabled": True
             },
-            "Comp": { # Possible comp expansion - add to setting?
-                #"value": lambda spell: pprintComp(spell) if self.expandRowsAction.isChecked() else spell.compstr,
-                #"tooltip": lambda spell: None if self.expandRowsAction.isChecked() else pprintComp(spell),
-                "value": lambda spell: spell.compstr,
-                "tooltip": lambda spell: pprintComp(spell),
+            "Comp": {
+                "value": lambda spell: pprintComp(spell) if self.expandRowsAction.isChecked() and self.currentSettings['expandComp'] else spell.compstr,
+                "tooltip": lambda spell: None if self.expandRowsAction.isChecked() and self.currentSettings['expandComp'] else pprintComp(spell),
                 "size": COLUMN_SHORT,
                 "enabled": True
             },
@@ -1027,6 +1025,8 @@ class MainWindow(QMainWindow):
                 if row[y]["tooltip"] != None:#
                     item.setToolTip(row[y]['tooltip'](spell))
                 self.table.setItem(x, y, item)
+            if self.currentSettings['updateTableProcessEvents']:
+                app.processEvents()
         self.countLabel.setText("Count: "+str(len(spells)))
         self.table.setSortingEnabled(True)
         #self.table.sortByColumn(0, Qt.AscendingOrder)
@@ -1044,6 +1044,8 @@ class MainWindow(QMainWindow):
             if self.table.columnWidth(col) > spellheaders[key]['size']:
                 self.table.setColumnWidth(col, spellheaders[key]['size'])
             totalSize += self.table.columnWidth(col)
+            if self.currentSettings['updateTableProcessEvents']:
+                app.processEvents()
         totalSize += self.table.verticalScrollBar().width()
         totalSize += self.table.verticalHeader().width()
         if resizeTable:
