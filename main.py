@@ -455,32 +455,10 @@ class TagDialog(QDialog): # If remove=False, adding a tag. If remove=True, remov
         self.accept()
 
 class SettingsDialog(QDialog):
-    def __init__(self, currentSettings=None):
+    def __init__(self, settingsTemplate, currentSettings=None):
         super().__init__()
         if not currentSettings: currentSettings=dict()
-        self.settingsTemplate = {
-            "Basic": {
-                "expandComp": {
-                    "name":"Expand the 'Comp' column when Expand Rows is enabled",
-                    "description":
-                        "When Expand Rows is enabled, the comp column will show the full spells comp rather than the initials.",
-                    "type":"checkbox",
-                    "default":False
-                }
-            },
-            "Experimental": {
-                "updateTableProcessEvents" :{
-                    "name":"Process UI events during table update",
-                    "description":(
-                        "When the table is being updated, keep the UI responding by periodically processing new events.\n"
-                        "This means that during a long table update (such as when all the spells are loaded) the window shouldn't just freeze, and instead you should be able to scroll and stuff (to an extent).\n"
-                        "This is super hacky, so there may be bugs/performance issues when this is enabled."
-                    ),
-                    "type":"checkbox",
-                    "default":False
-                }
-            }
-        }
+        self.settingsTemplate = settingsTemplate
         self.newSettings = self.generateSettingsDict(currentSettings)
         print(self.newSettings)
         self.initUI()
@@ -511,6 +489,7 @@ class SettingsDialog(QDialog):
                 if setting['type'] == "checkbox":
                     checkbox = QCheckBox(setting['name'])
                     checkbox.setToolTip(addLineBreaks(setting['description']))
+                    checkbox.setChecked(self.newSettings[settingkey])
                     checkbox.stateChanged.connect(
                         lambda state, settingkey=settingkey: self.settingsLambdaWrapper(settingkey, state==2)
                     )
@@ -539,8 +518,32 @@ class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
         self.initDataFiles()
-        self.settings = QSettings(PROGRAM_AUTHOR, PROGRAM_NAME)
-        self.spellspreadsheet = self.settings.value("spreadsheet", WB_DEFAULT_FILENAME)
+        self.regSettings = QSettings(PROGRAM_AUTHOR, PROGRAM_NAME)
+        self.settingsTemplate = {
+            "Basic": {
+                "expandComp": {
+                    "name":"Expand the 'Comp' column when Expand Rows is enabled",
+                    "description":
+                        "When Expand Rows is enabled, the comp column will show the full spells comp rather than the initials.",
+                    "type":"checkbox",
+                    "default":False,
+                }
+            },
+            "Experimental": {
+                "updateTableProcessEvents" :{
+                    "name":"Process UI events during table update",
+                    "description":(
+                        "When the table is being updated, keep the UI responding by periodically processing new events.\n"
+                        "This means that during a long table update (such as when all the spells are loaded) the window shouldn't just freeze, and instead you should be able to scroll and stuff (to an extent).\n"
+                        "This is super hacky, so there may be bugs/performance issues when this is enabled."
+                    ),
+                    "type":"checkbox",
+                    "default":False
+                }
+            }
+        }
+        self.currentSettings = self.loadSettings()
+        self.spellspreadsheet = self.regSettings.value("spreadsheet", WB_DEFAULT_FILENAME)
         if not os.path.isfile(self.spellspreadsheet):
             #QMessageBox.information(self, "Select Spellbook","Please select your Excel spreadsheet spellbook.")
             result = self.setSpellbook()
@@ -657,6 +660,37 @@ class MainWindow(QMainWindow):
         self.setWindowTitle("QSpellbook ({})".format(VERSION))
         self.setCentralWidget(table)
 
+    def loadSettings(self):
+        currentSettings = {}
+        self.regSettings.beginGroup("settings")
+        for settingGroup in self.settingsTemplate.values():
+            for settingkey, setting in settingGroup.items():
+                value = self.regSettings.value(settingkey, None)
+                # QSettings saves boolean values as strings
+                # Make sure strings are sanitised for "true"/"false" when saving
+                if value == "true":  value = True
+                if value == "false": value = False
+                if not value == None:
+                    currentSettings[settingkey] = value
+                else:
+                    currentSettings[settingkey] = setting['default']
+        self.regSettings.endGroup()
+        return currentSettings
+
+    def saveSettings(self):
+        self.regSettings.beginGroup("settings")
+        for settingkey, value in self.currentSettings.items():
+            if value == "true":  value = "true_"
+            if value == "false": value = "false_"
+            self.regSettings.setValue(settingkey, value)
+        self.regSettings.endGroup()
+
+    def openSettingsDialog(self):
+        dialog = SettingsDialog(self.settingsTemplate, self.currentSettings)
+        if dialog.exec():
+            self.currentSettings = dialog.newSettings
+            self.saveSettings()
+
     def descriptionlogic(self, spell):
         if not spell.description: return None
         if self.expandRowsAction.isChecked():
@@ -676,7 +710,7 @@ class MainWindow(QMainWindow):
             filepath = os.path.relpath(filepath)
             if os.path.exists(filepath):
                 self.spellspreadsheet = filepath
-                self.settings.setValue("spreadsheet", filepath)
+                self.regSettings.setValue("spreadsheet", filepath)
                 return True
         return False
 
@@ -901,8 +935,7 @@ class MainWindow(QMainWindow):
         tagBarAction.setChecked(not self.tagBar.isHidden())
 
     def debug(self):
-        settingsDialog = SettingsDialog()
-        settingsDialog.exec()
+        self.openSettingsDialog()
 
     def showTableContextMenu(self, pos):
         item = self.table.itemAt(pos)
@@ -924,11 +957,11 @@ class MainWindow(QMainWindow):
 
     def save(self):
         #self.settings.setValue("dockState", self.saveState())
-        self.settings.setValue("geometryState", self.saveGeometry())
+        self.regSettings.setValue("geometryState", self.saveGeometry())
 
     def restore(self):
         #stateData = self.settings.value("dockState", None)
-        geometryData = self.settings.value("geometryState", None)
+        geometryData = self.regSettings.value("geometryState", None)
         #if stateData:
         #    self.restoreState(stateData)
         if geometryData:
@@ -991,7 +1024,7 @@ class MainWindow(QMainWindow):
                 item.setFlags(TABLEITEM_FLAGS_NOEDIT)
                 item.setTextAlignment(alignment)
                 item.unsortedRow = x
-                if row[y]["tooltip"] != None:
+                if row[y]["tooltip"] != None:#
                     item.setToolTip(row[y]['tooltip'](spell))
                 self.table.setItem(x, y, item)
         self.countLabel.setText("Count: "+str(len(spells)))
