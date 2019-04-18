@@ -826,7 +826,6 @@ class MainWindow(QMainWindow):
         item = self.table.itemAt(pos)
         if not item: return
         row = item.unsortedRow
-        print(row)
         contextMenu = QMenu()
 
         addTagAction = contextMenu.addAction("&Add Tag")
