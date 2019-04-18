@@ -736,17 +736,17 @@ class MainWindow(QMainWindow):
             self.tagBar.widget().reupTagBox()
             self.saveTags()
 
-    def wipeTags(self, visible=False):
-        if visible:
-            for spell in self.spells:
-                if hash(spell) in self.tags:
-                    self.tags.pop(hash(spell))
-        else:
+    def wipeTags(self):
+        msgBox = QMessageBox()
+        msgBox.setText("Wiping all tags")
+        msgBox.setInformativeText("Are you sure? All tags will be deleted")
+        msgBox.setStandardButtons(QMessageBox.Yes, QMessageBox.No)
+        if msgBox.exec() == QMessageBox.Yes:
             self.tags = {}
-        self.updateTable(self.spells)
-        self.resizeTableCols()
-        self.tagBar.widget().reupTagBox()
-        self.saveTags()
+            self.updateTable(self.spells)
+            self.resizeTableCols()
+            self.tagBar.widget().reupTagBox()
+            self.saveTags()
 
     def initMenu(self):
         menuBar = self.menuBar()
