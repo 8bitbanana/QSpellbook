@@ -455,8 +455,9 @@ class TagDialog(QDialog): # If remove=False, adding a tag. If remove=True, remov
         self.accept()
 
 class SettingsDialog(QDialog):
-    def __init__(self, currentSettings=dict()):
+    def __init__(self, currentSettings=None):
         super().__init__()
+        if not currentSettings: currentSettings=dict()
         self.settingsTemplate = {
             "Basic": {
                 "expandComp": {
