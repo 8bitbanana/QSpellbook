@@ -740,7 +740,7 @@ class MainWindow(QMainWindow):
         msgBox = QMessageBox()
         msgBox.setText("Wiping all tags")
         msgBox.setInformativeText("Are you sure? All tags will be deleted")
-        msgBox.setStandardButtons(QMessageBox.Yes, QMessageBox.No)
+        msgBox.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
         if msgBox.exec() == QMessageBox.Yes:
             self.tags = {}
             self.updateTable(self.spells)
@@ -802,7 +802,7 @@ class MainWindow(QMainWindow):
         exportTagsAction.triggered.connect(self.exportTags)
         tagAllVisibleAction.triggered.connect(lambda: self.addTag(bulk=True))
         untagAllVisibleAction.triggered.connect(lambda: self.removeTag(bulk=True))
-        wipeTagsAction.triggered.connect(lambda: self.wipeTags(visible=False))
+        wipeTagsAction.triggered.connect(lambda: self.wipeTags())
 
         stateSaveAction.triggered.connect(self.save)
         stateRestoreAction.triggered.connect(self.restore)
