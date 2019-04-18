@@ -495,8 +495,8 @@ class MainWindow(QMainWindow):
                 "enabled": True
             },
             "Classes": {
-                "value": lambda spell: generateClassStr(spell),
-                "tooltip": lambda spell: pprintClasses(spell),
+                "value": lambda spell: pprintClasses(spell) if self.expandRowsAction.isChecked() else generateClassStr(spell),
+                "tooltip": lambda spell: None if self.expandRowsAction.isChecked() else pprintClasses(spell),
                 "size": COLUMN_SHORT,
                 "enabled": True
             },
@@ -530,7 +530,9 @@ class MainWindow(QMainWindow):
                 "size": COLUMN_TINY,
                 "enabled": True
             },
-            "Comp": {
+            "Comp": { # Possible comp expansion - add to setting?
+                #"value": lambda spell: pprintComp(spell) if self.expandRowsAction.isChecked() else spell.compstr,
+                #"tooltip": lambda spell: None if self.expandRowsAction.isChecked() else pprintComp(spell),
                 "value": lambda spell: spell.compstr,
                 "tooltip": lambda spell: pprintComp(spell),
                 "size": COLUMN_SHORT,
