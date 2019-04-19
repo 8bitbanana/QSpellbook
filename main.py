@@ -251,10 +251,11 @@ class FilterBar(QWidget):
         levelCheckBox.stateChanged.connect(lambda state: levelSlider.setEnabled(state))
         levelSlider.valueChanged.connect(lambda value: levelLabel.setText("LEVEL " + str(value)))
 
-        #nameEdit.editingFinished.connect(self.applyFilters)
-        nameEdit.textChanged.connect(self.applyFiltersAutoWrapper)
+        nameEdit.editingFinished.connect(lambda: self.applyFiltersAutoWrapper(True))
+        nameEdit.textChanged.connect(lambda : self.applyFiltersAutoWrapper(False))
         levelCheckBox.stateChanged.connect(self.applyFiltersAutoWrapper)
-        levelSlider.valueChanged.connect(self.applyFiltersAutoWrapper)
+        levelSlider.sliderReleased.connect(lambda: self.applyFiltersAutoWrapper(True))
+        levelSlider.valueChanged.connect(lambda: self.applyFiltersAutoWrapper(False))
         autoCheckBox.stateChanged.connect(self.applyFiltersAutoWrapper)
         autoCheckBox.stateChanged.connect(lambda state: applyButton.setEnabled(not state))
 
@@ -277,10 +278,11 @@ class FilterBar(QWidget):
         self.setContentsMargins(margins)
         self.setLayout(mainVBox)
 
-    def applyFiltersAutoWrapper(self):
+    def applyFiltersAutoWrapper(self, editingFinished=True):
         self.updateClearButton()
-        if self.autoCheckBox.isChecked():
-            self.applyFilters()
+        if editingFinished or not self.parent.currentSettings["dontUpdateWhileTyping"]:
+            if self.autoCheckBox.isChecked():
+                self.applyFilters()
 
     def collectClasses(self):
         classes = []
@@ -547,10 +549,21 @@ class MainWindow(QMainWindow):
                 "expandComp": {
                     "name":"Expand the 'Comp' column when Expand Rows is enabled",
                     "description":
-                        "When Expand Rows is enabled, the comp column will show the full spells comp rather than the initials.",
+                        "When Expand Rows is enabled, the comp column will show the full spell's components, including materials, rather than the initials.",
                     "type":"checkbox",
                     "default":False,
                     "onChange":lambda value: self.totalTableRefresh()
+                },
+                "dontUpdateWhileTyping": {
+                    "name":"Don't Auto Update while typing",
+                    "description": (
+                        "When Auto Update is enabled, don't auto-update while you are typing in a spell name, only after you have finished typing.\n"
+                        "Also applies to the spell level slider."
+                        "When this setting is disabled, the table will update on every keypress as you type in a name."
+                    ),
+                    "type":"checkbox",
+                    "default":True,
+                    "onChange":None
                 }
             },
             "Experimental": {
@@ -559,7 +572,7 @@ class MainWindow(QMainWindow):
                     "description":(
                         "When the table is being updated, keep the UI responding by periodically processing new events.\n"
                         "This means that during a long table update (such as when all the spells are loaded) the window shouldn't just freeze, and instead you should be able to scroll and stuff (to an extent).\n"
-                        "This is super hacky, so there may be bugs/performance issues when this is enabled."
+                        "This is super hacky (like SUPER hacky), so there may (read: will) be bugs/performance issues when this is enabled. Don't push the app too hard."
                     ),
                     "type":"checkbox",
                     "default":False,
@@ -1047,7 +1060,7 @@ class MainWindow(QMainWindow):
         self.addDockWidget(Qt.RightDockWidgetArea, tagBar)
 
     def updateTable(self, spells=None, alignment=Qt.AlignVCenter):
-        spells = spells if spells else self.spells
+        spells = spells if not spells == None else self.spells
         self.spells = spells
         self.table.setSortingEnabled(False)
         self.table.clearContents()
