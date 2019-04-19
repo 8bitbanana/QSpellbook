@@ -35,6 +35,8 @@ COLUMN_TINY = 70
 TABLE_MAX_ROW_HEIGHT = 50
 TOOLTIP_WIDTH = 150
 
+TABLE_SCROLL_SPEED = 30
+
 TABLEITEM_FLAGS_NOEDIT = Qt.ItemIsEnabled | Qt.ItemIsUserCheckable | Qt.ItemIsSelectable
 TABLEITEM_FLAGS_EDIT = Qt.ItemIsEnabled | Qt.ItemIsEditable | Qt.ItemIsUserCheckable | Qt.ItemIsSelectable
 
@@ -492,6 +494,25 @@ class SettingsDialog(QDialog):
                         lambda state, settingkey=settingkey: self.settingsLambdaWrapper(settingkey, state==2)
                     )
                     groupLayout.addWidget(checkbox)
+                elif setting['type'] == "slider": # Currently unused and unfinished. Kept in case I use this again
+                    sliderLabel = QLabel(setting['name'])
+                    sliderLabel.setToolTip(addLineBreaks(setting['description']))
+
+                    slider = QSlider(Qt.Horizontal)
+                    slider.setMinimum(setting['min'])
+                    slider.setMaximum(setting['max'])
+                    slider.setSingleStep(setting['steps'])
+                    slider.setValue(self.newSettings[settingkey])
+                    slider.setToolTip(addLineBreaks(setting['description']))
+
+                    sliderValueLabel = QLabel(str(self.newSettings[settingkey]))
+                    slider.valueChanged.connect(lambda value, label=sliderValueLabel: label.setText(str(value)))
+
+                    sliderLayout = QHBoxLayout()
+                    sliderLayout.addWidget(sliderLabel)
+                    sliderLayout.addWidget(slider)
+                    sliderLayout.addWidget(sliderValueLabel)
+                    groupLayout.addLayout(sliderLayout)
                 else:
                     errorLabel = QLabel("Error - Invalid Setting")
                     errorLabel.setToolTip("You shouldn't be seeing this!")
@@ -650,9 +671,6 @@ class MainWindow(QMainWindow):
         table.setWordWrap(True)
         table.setContextMenuPolicy(Qt.CustomContextMenu)
         table.customContextMenuRequested.connect(self.showTableContextMenu)
-        #table.setVerticalScrollMode(QAbstractItemView.ScrollPerPixel)
-        #table.verticalScrollBar().setSingleStep(100)
-        #table.horizontalHeader().sectionClicked.connect(self.resizeTableRows)
 
         self.table = table
         self.table.sortByColumn(0, Qt.AscendingOrder)
@@ -920,6 +938,12 @@ class MainWindow(QMainWindow):
         expandRowsAction.triggered.connect(lambda: self.updateTable())
         expandRowsAction.triggered.connect(lambda: self.resizeTableCols())
         expandRowsAction.triggered.connect(self.resizeTableRows)
+        expandRowsAction.toggled.connect(
+            lambda state: self.table.setVerticalScrollMode(
+                QAbstractItemView.ScrollPerPixel if state else QAbstractItemView.ScrollPerItem
+            )
+        )
+        expandRowsAction.triggered.connect(lambda state: self.table.verticalScrollBar().setSingleStep(TABLE_SCROLL_SPEED))
         self.expandRowsAction = expandRowsAction
 
         #saveTagsAction.triggered.connect(self.saveTags)
@@ -946,7 +970,7 @@ class MainWindow(QMainWindow):
         tagBarAction.setChecked(not self.tagBar.isHidden())
 
     def debug(self):
-        self.openSettingsDialog()
+        print("debug")
 
     def showTableContextMenu(self, pos):
         item = self.table.itemAt(pos)
