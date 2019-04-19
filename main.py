@@ -82,7 +82,10 @@ def pprintTags(spell, tags):
     return tag_str[:-1]
 
 def addLineBreaks(s):
-    newStr = textwrap.fill(s, width=TOOLTIP_WIDTH, break_long_words=False,replace_whitespace=False)
+    # https://stackoverflow.com/a/26538082/8708443
+    newStr = '\n'.join(['\n'.join(textwrap.wrap(line, TOOLTIP_WIDTH,
+        break_long_words=False, replace_whitespace=False))
+        for line in s.splitlines() if line.strip() != ''])
     return newStr
 
 def borderLine():
