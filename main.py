@@ -526,6 +526,7 @@ class MainWindow(QMainWindow):
                         "When Expand Rows is enabled, the comp column will show the full spells comp rather than the initials.",
                     "type":"checkbox",
                     "default":False,
+                    "onChange":lambda value: self.totalTableRefresh()
                 }
             },
             "Experimental": {
@@ -537,7 +538,8 @@ class MainWindow(QMainWindow):
                         "This is super hacky, so there may be bugs/performance issues when this is enabled."
                     ),
                     "type":"checkbox",
-                    "default":False
+                    "default":False,
+                    "onChange":None
                 }
             }
         }
@@ -648,6 +650,8 @@ class MainWindow(QMainWindow):
         table.setWordWrap(True)
         table.setContextMenuPolicy(Qt.CustomContextMenu)
         table.customContextMenuRequested.connect(self.showTableContextMenu)
+        #table.setVerticalScrollMode(QAbstractItemView.ScrollPerPixel)
+        #table.verticalScrollBar().setSingleStep(100)
         #table.horizontalHeader().sectionClicked.connect(self.resizeTableRows)
 
         self.table = table
@@ -685,7 +689,15 @@ class MainWindow(QMainWindow):
     def openSettingsDialog(self):
         dialog = SettingsDialog(self.settingsTemplate, self.currentSettings)
         if dialog.exec():
+            oldSettings = self.currentSettings
             self.currentSettings = dialog.newSettings
+            for settingkey, value in self.currentSettings.items():
+                 # If the setting has changed, trigger that settings onChange function (if it exists)
+                if not oldSettings[settingkey] == value:
+                    for settingsGroup in self.settingsTemplate.values():
+                        try: # Call the onChange lambda, if it exists
+                            settingsGroup[settingkey]['onChange'](value)
+                        except (KeyError, TypeError): pass
             self.saveSettings()
 
     def descriptionlogic(self, spell):
@@ -1068,6 +1080,11 @@ class MainWindow(QMainWindow):
         self.resizeTableRows()
         self.resize(min(self.table.width() + COLUMN_LONG, SCREEN_W*MAIN_HEIGHT_RATIO), min(SCREEN_H*DEFAULT_HEIGHT_RATIO, SCREEN_H*MAIN_WIDTH_RATIO))
         self.restore()
+
+    def totalTableRefresh(self):
+        self.updateTable()
+        self.resizeTableCols()
+        self.resizeTableRows()
 
 def main():
     sys.excepthook = except_hook
