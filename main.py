@@ -460,7 +460,6 @@ class SettingsDialog(QDialog):
         if not currentSettings: currentSettings=dict()
         self.settingsTemplate = settingsTemplate
         self.newSettings = self.generateSettingsDict(currentSettings)
-        print(self.newSettings)
         self.initUI()
 
     def generateSettingsDict(self, currentSettings):
@@ -474,7 +473,6 @@ class SettingsDialog(QDialog):
         return settings
 
     def closeDialog(self):
-        print(self.newSettings)
         self.accept()
 
     def settingsLambdaWrapper(self, key, value):
