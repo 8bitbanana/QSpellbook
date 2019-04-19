@@ -196,7 +196,7 @@ class FilterBar(QWidget):
                 classLeftVBox.addWidget(classCheckBox)
             else:
                 classRightVBox.addWidget(classCheckBox)
-            classCheckBox.stateChanged.connect(self.applyFiltersAutoWrapper)
+            classCheckBox.stateChanged.connect(lambda: self.applyFiltersAutoWrapper())
         classMainHBox = QHBoxLayout()
         classMainHBox.addLayout(classLeftVBox)
         classMainHBox.addLayout(classRightVBox)
@@ -252,11 +252,11 @@ class FilterBar(QWidget):
         levelSlider.valueChanged.connect(lambda value: levelLabel.setText("LEVEL " + str(value)))
 
         nameEdit.editingFinished.connect(lambda: self.applyFiltersAutoWrapper(True))
-        nameEdit.textChanged.connect(lambda : self.applyFiltersAutoWrapper(False))
-        levelCheckBox.stateChanged.connect(self.applyFiltersAutoWrapper)
+        nameEdit.textChanged.connect(lambda: self.applyFiltersAutoWrapper(False))
+        levelCheckBox.stateChanged.connect(lambda: self.applyFiltersAutoWrapper())
         levelSlider.sliderReleased.connect(lambda: self.applyFiltersAutoWrapper(True))
         levelSlider.valueChanged.connect(lambda: self.applyFiltersAutoWrapper(False))
-        autoCheckBox.stateChanged.connect(self.applyFiltersAutoWrapper)
+        autoCheckBox.stateChanged.connect(lambda: self.applyFiltersAutoWrapper())
         autoCheckBox.stateChanged.connect(lambda state: applyButton.setEnabled(not state))
 
         classSelectAllButton.clicked.connect(lambda: self.classesSetEnabled(True))
@@ -558,7 +558,7 @@ class MainWindow(QMainWindow):
                     "name":"Don't Auto Update while typing",
                     "description": (
                         "When Auto Update is enabled, don't auto-update while you are typing in a spell name, only after you have finished typing.\n"
-                        "Also applies to the spell level slider."
+                        "Also applies to the spell level slider.\n"
                         "When this setting is disabled, the table will update on every keypress as you type in a name."
                     ),
                     "type":"checkbox",
